@@ -1,3 +1,7 @@
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub enum Status {
     Open,
     InProgress,
@@ -5,11 +9,13 @@ pub enum Status {
     Closed,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub struct Epic {
-    name: String,
-    description: String,
-    status: Status,
-    stories: Vec<Story>,
+    pub name: String,
+    pub description: String,
+    pub status: Status,
+    pub stories: Vec<Story>,
 }
 
 impl Epic {
@@ -23,6 +29,8 @@ impl Epic {
     }
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub struct Story {
     name: String,
     description: String,
