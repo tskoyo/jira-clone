@@ -13,7 +13,7 @@ struct EpicRow {
 }
 
 fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    let url = "mysql://root:12345@192.168.0.63:3306/jira_clone";
+    let url = "mysql://tskoyo:12345@192.168.0.63:3306/jira_clone";
     let pool = Pool::new(url)?;
 
     let mut conn = pool.get_conn()?;
