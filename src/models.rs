@@ -1,7 +1,8 @@
 use serde::{Deserialize, Serialize};
-use sqlx::FromRow;
+use sqlx::{FromRow, Type};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Type)]
+#[sqlx(type_name = "VARCHAR")]
 #[allow(dead_code)]
 pub enum Status {
     Open,

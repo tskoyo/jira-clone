@@ -1,11 +1,19 @@
-use crate::models::Epic;
 use crate::models::Status;
+use sqlx::FromRow;
 use sqlx::mysql::MySqlPool;
-use sqlx::mysql::MySqlPoolOptions;
-use sqlx::mysql::MySqlRow;
 
 mod models;
 mod repository;
+
+#[derive(Debug, FromRow)]
+pub struct EpicWithStoryRow {
+    pub epic_name: String,
+    pub epic_description: String,
+    pub epic_status: Status,
+    pub story_name: Option<String>,
+    pub story_description: Option<String>,
+    pub story_status: Option<Status>,
+}
 
 #[tokio::main]
 async fn main() -> Result<(), sqlx::Error> {
@@ -18,8 +26,8 @@ async fn main() -> Result<(), sqlx::Error> {
     Ok(())
 }
 
-async fn get_epic(pool: &MySqlPool, epic_id: u64) -> Result<Vec<MySqlRow>, sqlx::Error> {
-    let rows: Vec<Epic> = sqlx::query_as::<_, Epic>(
+async fn get_epic(pool: &MySqlPool, epic_id: u64) -> Result<Vec<EpicWithStoryRow>, sqlx::Error> {
+    let rows = sqlx::query_as::<_, EpicWithStoryRow>(
         r#"
         SELECT
             e.name as epic_name,
@@ -37,32 +45,5 @@ async fn get_epic(pool: &MySqlPool, epic_id: u64) -> Result<Vec<MySqlRow>, sqlx:
     .fetch_all(pool)
     .await?;
 
-    Ok(records)
+    Ok(rows)
 }
-
-// async fn list_todos(pool: &MySqlPool) -> Result<(), sqlx::Error> {
-//     let recs = sqlx::query!(
-//         r#"
-// SELECT id, description, done
-// FROM todos
-// ORDER BY id
-//         "#
-//     )
-//     .fetch_all(pool)
-//     .await?;
-
-//     // NOTE: Booleans in MySQL are stored as `TINYINT(1)` / `i8`
-//     //       0 = false, non-0 = true
-//     for rec in recs {
-//         println!(
-//             "- [{}] {}: {}",
-//             if rec.done != 0 { "x" } else { " " },
-//             rec.id,
-//             &rec.description,
-//         );
-//     }
-
-//     Ok(())
-// }
-
-// fn create_db_pool(database_url: &string) -> MySqlPool {}
