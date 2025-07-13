@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
-use sqlx::{FromRow, Type};
+use sqlx::{FromRow, Type, types::Json};
 
 #[derive(Debug, Serialize, Deserialize, Type)]
-#[sqlx(type_name = "VARCHAR")]
+#[sqlx(type_name = "varchar")]
 #[allow(dead_code)]
 pub enum Status {
     Open,
@@ -18,6 +18,15 @@ pub struct Epic {
     pub description: String,
     pub status: Status,
     pub stories: Vec<Story>,
+}
+
+#[derive(Debug, FromRow)]
+#[allow(dead_code)]
+pub struct EpicJsonRow {
+    pub name: String,
+    pub description: String,
+    pub status: Status,
+    pub stories: Json<Vec<Story>>,
 }
 
 impl Epic {
