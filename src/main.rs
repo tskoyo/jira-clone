@@ -28,22 +28,17 @@ async fn main() -> Result<(), sqlx::Error> {
 
 async fn get_epic(pool: &MySqlPool, epic_id: u64) -> Result<Vec<EpicJsonRow>, sqlx::Error> {
     let rows = sqlx::query_as::<_, EpicJsonRow>(
-        r#"SELECT
-            e.id,
-            e.name,
-            e.description,
-            CAST(e.status AS CHAR),
-            JSON_ARRAYAGG(
-                JSON_OBJECT(
-                    'name',        s.name,
-                    'description', s.description,
-                    'status',      CAST(s.status AS CHAR)
-                )
-            ) AS stories
-        FROM    epics e
-        LEFT JOIN stories s ON s.epic_id = e.id
-        WHERE   e.id = ?
-        GROUP BY e.id;
+        r#"
+        SELECT
+            e.name as epic_name,
+            e.description as epic_description,
+            e.status as epic_status,
+            s.name as story_name,
+            s.description as story_description,
+            s.status as story_status
+        FROM epics e
+        LEFT JOIN stories s ON e.id = s.epic_id
+        WHERE e.id = ?
         "#,
     )
     .bind(epic_id)
