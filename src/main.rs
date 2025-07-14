@@ -2,7 +2,6 @@ use crate::models::EpicJsonRow;
 use sqlx::mysql::MySqlPool;
 
 mod models;
-mod repository;
 
 #[tokio::main]
 async fn main() -> Result<(), sqlx::Error> {
