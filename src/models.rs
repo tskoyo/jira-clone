@@ -26,7 +26,7 @@ pub struct EpicJsonRow {
     pub epic_name: String,
     pub epic_description: String,
     pub epic_status: Status,
-    pub story_name: Option<String>,
+    pub story_name: String,
     pub story_description: Option<String>,
     pub story_status: Option<Status>,
 }

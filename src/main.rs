@@ -1,19 +1,8 @@
-use crate::models::{Epic, EpicJsonRow, Status};
-use sqlx::FromRow;
+use crate::models::EpicJsonRow;
 use sqlx::mysql::MySqlPool;
 
 mod models;
 mod repository;
-
-#[derive(Debug, FromRow)]
-pub struct EpicWithStoryRow {
-    pub epic_name: String,
-    pub epic_description: String,
-    pub epic_status: Status,
-    pub story_name: Option<String>,
-    pub story_description: Option<String>,
-    pub story_status: Option<Status>,
-}
 
 #[tokio::main]
 async fn main() -> Result<(), sqlx::Error> {
@@ -21,7 +10,21 @@ async fn main() -> Result<(), sqlx::Error> {
     let pool = MySqlPool::connect(url).await?;
 
     let epic = get_epic(&pool, 2).await?;
-    println!("{:?}", epic);
+    // println!("{:?}", epic);
+
+    for e in &epic {
+        println!("-------------------------");
+        println!("Epic name: {}", e.epic_name);
+        println!("Story name: {}", e.story_name);
+        match &e.story_description {
+            Some(desc) => println!("Description: {}", desc),
+            None => println!("Description: <none>"),
+        }
+        match &e.story_status {
+            Some(status) => println!("Status: {:?}", status),
+            None => println!("Status: <none>"),
+        }
+    }
 
     Ok(())
 }
