@@ -1,5 +1,5 @@
 use crate::EpicJsonRow;
-use sqlx::{MySql, Pool, mysql::MySqlPool};
+use sqlx::{MySql, Pool};
 
 pub struct Repository {
     pub pool: Pool<MySql>,
