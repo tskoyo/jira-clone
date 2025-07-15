@@ -1,8 +1,9 @@
-use crate::{db::DatabaseConnection, models::EpicJsonRow};
+use crate::{db::DatabaseConnection, models::EpicJsonRow, repository::Repository};
 use sqlx::mysql::MySqlPool;
 
 mod db;
 mod models;
+mod repository;
 
 #[tokio::main]
 async fn main() -> Result<(), sqlx::Error> {
@@ -15,8 +16,8 @@ async fn main() -> Result<(), sqlx::Error> {
     );
 
     let pool = MySqlPool::connect(&db_conection.format_url()).await?;
-
-    let epic = get_epic(&pool, 2).await?;
+    let repository = Repository::new(pool);
+    let epic = repository.get_epic(2).await?;
 
     for e in &epic {
         println!("-------------------------");
@@ -33,26 +34,4 @@ async fn main() -> Result<(), sqlx::Error> {
     }
 
     Ok(())
-}
-
-async fn get_epic(pool: &MySqlPool, epic_id: u64) -> Result<Vec<EpicJsonRow>, sqlx::Error> {
-    let rows = sqlx::query_as::<_, EpicJsonRow>(
-        r#"
-        SELECT
-            e.name as epic_name,
-            e.description as epic_description,
-            e.status as epic_status,
-            s.name as story_name,
-            s.description as story_description,
-            s.status as story_status
-        FROM epics e
-        LEFT JOIN stories s ON e.id = s.epic_id
-        WHERE e.id = ?
-        "#,
-    )
-    .bind(epic_id)
-    .fetch_all(pool)
-    .await?;
-
-    Ok(rows)
 }
