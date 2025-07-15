@@ -1,15 +1,22 @@
-use crate::models::EpicJsonRow;
+use crate::{db::DatabaseConnection, models::EpicJsonRow};
 use sqlx::mysql::MySqlPool;
 
+mod db;
 mod models;
 
 #[tokio::main]
 async fn main() -> Result<(), sqlx::Error> {
-    let url = "mysql://tskoyo:12345@192.168.0.63:3306/jira_clone";
-    let pool = MySqlPool::connect(url).await?;
+    let db_conection = DatabaseConnection::new(
+        "tskoyo".to_owned(),
+        "12345".to_owned(),
+        "192.168.0.63".to_owned(),
+        "3306".to_owned(),
+        "jira_clone".to_owned(),
+    );
+
+    let pool = MySqlPool::connect(&db_conection.format_url()).await?;
 
     let epic = get_epic(&pool, 2).await?;
-    // println!("{:?}", epic);
 
     for e in &epic {
         println!("-------------------------");
