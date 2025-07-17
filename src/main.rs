@@ -21,7 +21,7 @@ async fn main() -> Result<(), sqlx::Error> {
 
     for e in &epic {
         println!("-------------------------");
-        println!("Epic name: {}", e.epic_name);
+        println!("[Epic] name: {}", e.epic_name);
         println!("Story name: {}", e.story_name);
         match &e.story_description {
             Some(desc) => println!("Description: {}", desc),
