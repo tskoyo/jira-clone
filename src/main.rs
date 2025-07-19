@@ -16,7 +16,7 @@ async fn main() -> Result<(), sqlx::Error> {
     );
 
     let pool = MySqlPool::connect(&db_conection.format_url()).await?;
-    let repository = Repository::new(pool);
+    let repository = Repository::new(&pool);
     let epic = repository.get_epic(2).await?;
 
     for e in &epic {

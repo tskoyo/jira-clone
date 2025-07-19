@@ -1,12 +1,12 @@
 use crate::EpicJsonRow;
 use sqlx::{MySql, Pool};
 
-pub struct Repository {
-    pub pool: Pool<MySql>,
+pub struct Repository<'a> {
+    pub pool: &'a Pool<MySql>,
 }
 
-impl Repository {
-    pub fn new(mysql_pool: Pool<MySql>) -> Self {
+impl<'a> Repository<'a> {
+    fn new(mysql_pool: &'a Pool<MySql>) -> Self {
         Repository { pool: mysql_pool }
     }
 
@@ -26,7 +26,7 @@ impl Repository {
         "#,
         )
         .bind(epic_id)
-        .fetch_all(&self.pool)
+        .fetch_all(self.pool)
         .await?;
 
         Ok(rows)
