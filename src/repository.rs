@@ -6,7 +6,7 @@ pub struct Repository<'a> {
 }
 
 impl<'a> Repository<'a> {
-    fn new(mysql_pool: &'a Pool<MySql>) -> Self {
+    pub fn new(mysql_pool: &'a Pool<MySql>) -> Self {
         Repository { pool: mysql_pool }
     }
 
@@ -30,5 +30,26 @@ impl<'a> Repository<'a> {
         .await?;
 
         Ok(rows)
+    }
+
+    pub async fn insert_epic(
+        &self,
+        name: &str,
+        description: &str,
+        status: &str,
+    ) -> Result<u64, sqlx::Error> {
+        let result = sqlx::query!(
+            r#"
+            INSERT INTO epics (name, description, status)
+            VALUES (?, ?, ?)
+            "#,
+            name,
+            description,
+            status
+        );
+
+        Ok(2)
+        // .execute(self.pool)
+        // .await?;
     }
 }
