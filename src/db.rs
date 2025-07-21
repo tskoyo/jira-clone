@@ -1,4 +1,5 @@
 use anyhow::Result;
+use serde::{Deserialize, Serialize};
 
 use crate::models::{DBState, Epic, Status, Story};
 
@@ -7,17 +8,30 @@ trait Database {
     fn write_db(&self, db_state: &DBState) -> Result<()>;
 }
 
+#[derive(Serialize, Deserialize, Debug)]
 struct JSONFileDatabase {
     pub file_path: String,
 }
 
 impl Database for JSONFileDatabase {
     fn read_db(&self) -> Result<DBState> {
-        todo!() // read the content's of self.file_path and deserialize it using serde
+        let file_content = std::fs::read_to_string(&self.file_path)
+            .map_err(|e| anyhow::anyhow!("Failed to read file: {}", e))?;
+
+        let db_state: DBState = serde_json::from_str(&file_content)
+            .map_err(|e| anyhow::anyhow!("Failed to parse JSON: {}", e))?;
+
+        Ok(db_state)
     }
 
     fn write_db(&self, db_state: &DBState) -> Result<()> {
-        todo!() // serialize db_state to json and store it in self.file_path
+        let json_content = serde_json::to_string_pretty(db_state)
+            .map_err(|e| anyhow::anyhow!("Failed to serialize DBState: {}", e))?;
+
+        std::fs::write(&self.file_path, json_content)
+            .map_err(|e| anyhow::anyhow!("Failed to write file: {}", e))?;
+
+        Ok(())
     }
 }
 
@@ -122,7 +136,6 @@ mod tests {
             let read_result = db.read_db().unwrap();
 
             assert_eq!(write_result.is_ok(), true);
-            // TODO: fix this error by deriving the appropriate traits for DBState
             assert_eq!(read_result, state);
         }
     }
