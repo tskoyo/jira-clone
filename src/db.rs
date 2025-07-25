@@ -3,13 +3,14 @@ use serde::{Deserialize, Serialize};
 
 use crate::models::{DBState, Epic, Status, Story};
 
-trait Database {
+pub trait Database {
+    // Make the trait methods public by adding `pub` here
     fn read_db(&self) -> Result<DBState>;
     fn write_db(&self, db_state: &DBState) -> Result<()>;
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-struct JSONFileDatabase {
+pub struct JSONFileDatabase {
     pub file_path: String,
 }
 
