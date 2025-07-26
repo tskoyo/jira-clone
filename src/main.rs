@@ -6,7 +6,7 @@ use db::Database;
 
 fn main() -> Result<(), anyhow::Error> {
     let db = db::JSONFileDatabase {
-        file_path: "db_state.json".to_string(), // Path to your JSON file
+        file_path: "../data/db.json".to_string(),
     };
 
     let epic = models::Epic {
