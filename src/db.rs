@@ -4,7 +4,6 @@ use serde::{Deserialize, Serialize};
 use crate::models::{DBState, Epic, Status, Story};
 
 pub trait Database {
-    // Make the trait methods public by adding `pub` here
     fn read_db(&self) -> Result<DBState>;
     fn write_db(&self, db_state: &DBState) -> Result<()>;
 }
@@ -17,12 +16,12 @@ pub struct JSONFileDatabase {
 impl Database for JSONFileDatabase {
     fn read_db(&self) -> Result<DBState> {
         let file_content = std::fs::read_to_string(&self.file_path)
-            .map_err(|e| anyhow::anyhow!("Failed to read file: {}", e))?;
+            .map_err(|e| anyhow::anyhow!("Failed to read to string: {}", e))?;
 
-        let db_state: DBState = serde_json::from_str(&file_content)
-            .map_err(|e| anyhow::anyhow!("Failed to parse JSON: {}", e))?;
+        let deserialized_content: DBState = serde_json::from_str(&file_content)
+            .map_err(|e| anyhow::anyhow!("Failed to deserialize: {}", e))?;
 
-        Ok(db_state)
+        Ok(deserialized_content)
     }
 
     fn write_db(&self, db_state: &DBState) -> Result<()> {
