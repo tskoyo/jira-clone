@@ -199,12 +199,76 @@ mod tests {
             };
             let epic_id = jira_database.create_epic(epic).unwrap();
 
-            jira_database.create_story(story, epic_id);
+            jira_database.create_story(story, epic_id).unwrap();
 
             let db_state = jira_database.read_db().unwrap();
             assert_eq!(db_state.last_item_id, 2);
             assert_eq!(db_state.epics.len(), 1);
             assert_eq!(db_state.stories.len(), 1);
+        }
+
+        #[test]
+        fn update_epic_status_should_work() {
+            let (_tmpfile, test_db) = create_test_db();
+            let jira_database = JiraDatabase::new(test_db.file_path.clone());
+
+            let epic = Epic {
+                name: "New Epic".to_owned(),
+                description: "Epic description".to_owned(),
+                status: Status::Open,
+                stories: vec![],
+            };
+            let epic_id = jira_database.create_epic(epic).unwrap();
+
+            jira_database
+                .update_epic_status(epic_id, Status::Closed)
+                .unwrap();
+
+            let db_state = jira_database.read_db().unwrap();
+            assert_eq!(db_state.epics.get(&epic_id).unwrap().status, Status::Closed);
+        }
+
+        #[test]
+        fn update_story_status_should_work() {
+            let (_tmpfile, test_db) = create_test_db();
+            let jira_database = JiraDatabase::new(test_db.file_path.clone());
+            let story = Story {
+                name: "Story".to_owned(),
+                description: "Story description".to_owned(),
+                status: Status::Open,
+            };
+            let epic = Epic {
+                name: "New Epic".to_owned(),
+                description: "Epic description".to_owned(),
+                status: Status::Open,
+                stories: vec![],
+            };
+            let epic_id = jira_database.create_epic(epic).unwrap();
+            let story_id = jira_database.create_story(story, epic_id).unwrap();
+            jira_database
+                .update_story_status(story_id, Status::Closed)
+                .unwrap();
+            let db_state = jira_database.read_db().unwrap();
+            assert_eq!(
+                db_state.stories.get(&story_id).unwrap().status,
+                Status::Closed
+            );
+        }
+
+        #[test]
+        fn delete_epic_should_work() {
+            let (_tmpfile, test_db) = create_test_db();
+            let jira_database = JiraDatabase::new(test_db.file_path.clone());
+            let epic = Epic {
+                name: "New Epic".to_owned(),
+                description: "Epic description".to_owned(),
+                status: Status::Open,
+                stories: vec![],
+            };
+            let epic_id = jira_database.create_epic(epic).unwrap();
+            jira_database.delete_epic(epic_id).unwrap();
+            let db_state = jira_database.read_db().unwrap();
+            assert_eq!(db_state.epics.len(), 0);
         }
 
         #[test]
