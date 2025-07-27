@@ -1,7 +1,107 @@
-use anyhow::Result;
+use anyhow::{Ok, Result};
 use serde::{Deserialize, Serialize};
 
 use crate::models::{DBState, Epic, Status, Story};
+
+pub struct JiraDatabase {
+    database: Box<dyn Database>,
+}
+
+impl JiraDatabase {
+    pub fn new(file_path: String) -> Self {
+        JiraDatabase {
+            database: Box::new(JSONFileDatabase { file_path }),
+        }
+    }
+
+    pub fn read_db(&self) -> Result<DBState> {
+        let db_state = self.database.read_db()?;
+
+        Ok(db_state)
+    }
+
+    pub fn create_epic(&self, epic: Epic) -> Result<u32> {
+        let mut db_state = self.read_db()?;
+        let epic_id = db_state.last_item_id + 1;
+
+        db_state.last_item_id = epic_id;
+        db_state.epics.insert(epic_id, epic);
+
+        self.database.write_db(&db_state)?;
+
+        Ok(epic_id)
+    }
+
+    pub fn create_story(&self, story: Story, epic_id: u32) -> Result<u32> {
+        let mut db_state = self.read_db()?;
+        let story_id = db_state.last_item_id + 1;
+
+        db_state.last_item_id = story_id;
+        db_state.stories.insert(story_id, story);
+
+        if let Some(epic) = db_state.epics.get_mut(&epic_id) {
+            epic.stories.push(story_id);
+        } else {
+            return Err(anyhow::anyhow!("Epic not found!"));
+        }
+
+        self.database.write_db(&db_state)?;
+
+        Ok(story_id)
+    }
+
+    pub fn delete_epic(&self, epic_id: u32) -> Result<()> {
+        let mut db_state = self.read_db()?;
+
+        if let Some(_) = db_state.epics.get(&epic_id) {
+            db_state.epics.remove(&epic_id);
+        } else {
+            return Err(anyhow::anyhow!("Epic not found!"));
+        }
+
+        self.database.write_db(&db_state)?;
+        Ok(())
+    }
+
+    pub fn delete_story(&self, epic_id: u32, story_id: u32) -> Result<()> {
+        let mut db_state = self.read_db()?;
+
+        if let Some(_) = db_state.stories.get(&epic_id) {
+            db_state.stories.remove(&epic_id);
+        } else {
+            return Err(anyhow::anyhow!("Epic not found!"));
+        }
+
+        self.database.write_db(&db_state)?;
+        Ok(())
+    }
+
+    pub fn update_epic_status(&self, epic_id: u32, status: Status) -> Result<()> {
+        let mut db_state = self.read_db()?;
+
+        if let Some(epic) = db_state.epics.get_mut(&epic_id) {
+            epic.status = status;
+        } else {
+            return Err(anyhow::anyhow!("Epic not found!"));
+        }
+
+        self.database.write_db(&db_state)?;
+        Ok(())
+    }
+
+    pub fn update_story_status(&self, story_id: u32, status: Status) -> Result<()> {
+        let mut db_state = self.read_db()?;
+
+        if let Some(story) = db_state.stories.get_mut(&story_id) {
+            story.status = status;
+        } else {
+            return Err(anyhow::anyhow!("Epic not found!"));
+        }
+
+        self.database.write_db(&db_state)?;
+        Ok(())
+    }
+}
 
 pub trait Database {
     fn read_db(&self) -> Result<DBState>;
@@ -45,6 +145,45 @@ mod tests {
 
         use super::*;
 
+        fn create_test_db() -> (tempfile::NamedTempFile, JSONFileDatabase) {
+            let mut tmpfile = tempfile::NamedTempFile::new().unwrap();
+            let file_contents = r#"{ "last_item_id": 0, "epics": {}, "stories": {} }"#;
+            write!(tmpfile, "{}", file_contents).unwrap();
+
+            println!(
+                "Temporary file path in create_test_db: {}",
+                tmpfile.path().display()
+            );
+            let db = JSONFileDatabase {
+                file_path: tmpfile
+                    .path()
+                    .to_str()
+                    .expect("failed to convert tmpfile path to str")
+                    .to_string(),
+            };
+
+            (tmpfile, db)
+        }
+
+        #[test]
+        fn create_epic_should_work() {
+            let (_tmpfile, test_db) = create_test_db();
+
+            let jira_database = JiraDatabase::new(test_db.file_path.clone());
+
+            let epic = Epic {
+                name: "New Epic".to_owned(),
+                description: "Epic description".to_owned(),
+                status: Status::Open,
+                stories: vec![],
+            };
+
+            jira_database.create_epic(epic).unwrap();
+            let db_state = jira_database.read_db().unwrap();
+            assert_eq!(db_state.last_item_id, 1);
+            assert_eq!(db_state.epics.len(), 1);
+        }
+
         #[test]
         fn read_db_should_fail_with_invalid_path() {
             let db = JSONFileDatabase {
@@ -75,38 +214,15 @@ mod tests {
 
         #[test]
         fn read_db_should_parse_json_file() {
-            let mut tmpfile = tempfile::NamedTempFile::new().unwrap();
-
-            let file_contents = r#"{ "last_item_id": 0, "epics": {}, "stories": {} }"#;
-            write!(tmpfile, "{}", file_contents).unwrap();
-
-            let db = JSONFileDatabase {
-                file_path: tmpfile
-                    .path()
-                    .to_str()
-                    .expect("failed to convert tmpfile path to str")
-                    .to_string(),
-            };
-
-            let result = db.read_db();
+            let (_tmpfile, test_db) = create_test_db();
+            let result = test_db.read_db();
 
             assert_eq!(result.is_ok(), true);
         }
 
         #[test]
         fn write_db_should_work() {
-            let mut tmpfile = tempfile::NamedTempFile::new().unwrap();
-
-            let file_contents = r#"{ "last_item_id": 0, "epics": {}, "stories": {} }"#;
-            write!(tmpfile, "{}", file_contents).unwrap();
-
-            let db = JSONFileDatabase {
-                file_path: tmpfile
-                    .path()
-                    .to_str()
-                    .expect("failed to convert tmpfile path to str")
-                    .to_string(),
-            };
+            let (_tmpfile, test_db) = create_test_db();
 
             let story = Story {
                 name: "epic 1".to_owned(),
@@ -132,8 +248,8 @@ mod tests {
                 stories,
             };
 
-            let write_result = db.write_db(&state);
-            let read_result = db.read_db().unwrap();
+            let write_result = test_db.write_db(&state);
+            let read_result = test_db.read_db().unwrap();
 
             assert_eq!(write_result.is_ok(), true);
             assert_eq!(read_result, state);
