@@ -150,10 +150,6 @@ mod tests {
             let file_contents = r#"{ "last_item_id": 0, "epics": {}, "stories": {} }"#;
             write!(tmpfile, "{}", file_contents).unwrap();
 
-            println!(
-                "Temporary file path in create_test_db: {}",
-                tmpfile.path().display()
-            );
             let db = JSONFileDatabase {
                 file_path: tmpfile
                     .path()
@@ -182,6 +178,33 @@ mod tests {
             let db_state = jira_database.read_db().unwrap();
             assert_eq!(db_state.last_item_id, 1);
             assert_eq!(db_state.epics.len(), 1);
+        }
+
+        #[test]
+        fn create_story_should_work() {
+            let (_tmpfile, test_db) = create_test_db();
+            let jira_database = JiraDatabase::new(test_db.file_path.clone());
+
+            let story = Story {
+                name: "Story".to_owned(),
+                description: "Story description".to_owned(),
+                status: Status::Open,
+            };
+
+            let epic = Epic {
+                name: "New Epic".to_owned(),
+                description: "Epic description".to_owned(),
+                status: Status::Open,
+                stories: vec![],
+            };
+            let epic_id = jira_database.create_epic(epic).unwrap();
+
+            jira_database.create_story(story, epic_id);
+
+            let db_state = jira_database.read_db().unwrap();
+            assert_eq!(db_state.last_item_id, 2);
+            assert_eq!(db_state.epics.len(), 1);
+            assert_eq!(db_state.stories.len(), 1);
         }
 
         #[test]
