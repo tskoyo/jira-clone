@@ -129,7 +129,7 @@ impl Database for JSONFileDatabase {
             .map_err(|e| anyhow::anyhow!("Failed to serialize DBState: {}", e))?;
 
         std::fs::write(&self.file_path, json_content)
-            .map_err(|e| anyhow::anyhow!("Failed to write file: {}", e))?;
+            .map_err(|e| anyhow::anyhow!("Failed to write file {}", e))?;
 
         Ok(())
     }
